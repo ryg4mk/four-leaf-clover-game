@@ -384,14 +384,27 @@
 
   function startGame() {
     if (!state.ready || state.running) return;
-    buildRound();
-    draw();
+
     state.running=true;
     state.found=false;
-    state.startTime=performance.now();
     state.highlighting=false;
     startScreen.classList.add('hidden');
     resultScreen.classList.add('hidden');
+
+    // 先に開始画面を消してタップへの反応を見せてから、次フレームで新しい配置を作る。
+    requestAnimationFrame(()=>{
+      try {
+        buildRound();
+        draw();
+        state.startTime=performance.now();
+      } catch (err) {
+        console.error(err);
+        state.running=false;
+        startScreen.classList.remove('hidden');
+        startButton.disabled=false;
+        startButton.textContent='START';
+      }
+    });
   }
 
   function finishGame() {
@@ -483,6 +496,7 @@
     .then(()=>{
       resize();
       startButton.disabled=false;
+      startButton.textContent='START';
       requestAnimationFrame(frame);
     })
     .catch(()=>{
