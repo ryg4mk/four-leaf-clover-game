@@ -317,22 +317,29 @@
     if (state.target) {
       const t=state.target;
 
+      // 四つ葉そのものは常に本来の色で表示する。
+      drawSprite(t.img,t.x,t.y,t.w,t.h,t.rot,1);
+
       if (DEV_MODE && !state.found) {
-        // 開発者モード：四つ葉だけ強制的にマゼンタへ着色して位置確認しやすくする。
+        // 開発者モード：見た目を変えず、位置確認用の円だけ表示する。
+        // 円の内側で実際の四つ葉の色・サイズ・周囲との馴染み方を確認できる。
+        const radius=Math.max(t.w,t.h)*.72;
         ctx.save();
         ctx.translate(t.x,t.y);
-        ctx.rotate(t.rot);
-        ctx.drawImage(t.img,-t.w/2,-t.h/2,t.w,t.h);
-        ctx.globalCompositeOperation='source-atop';
-        ctx.fillStyle='rgba(255,0,210,.78)';
-        ctx.fillRect(-t.w/2,-t.h/2,t.w,t.h);
-        ctx.globalCompositeOperation='source-over';
-        ctx.strokeStyle='rgba(255,255,255,.95)';
-        ctx.lineWidth=2;
-        ctx.strokeRect(-t.w/2,-t.h/2,t.w,t.h);
+        ctx.shadowColor='rgba(0,0,0,.85)';
+        ctx.shadowBlur=4;
+        ctx.strokeStyle='rgba(255,235,70,.98)';
+        ctx.lineWidth=3;
+        ctx.beginPath();
+        ctx.arc(0,0,radius,0,TAU);
+        ctx.stroke();
+        ctx.shadowBlur=0;
+        ctx.strokeStyle='rgba(255,255,255,.88)';
+        ctx.lineWidth=1;
+        ctx.beginPath();
+        ctx.arc(0,0,radius+4,0,TAU);
+        ctx.stroke();
         ctx.restore();
-      } else {
-        drawSprite(t.img,t.x,t.y,t.w,t.h,t.rot,1);
       }
 
       if (state.highlighting) {
