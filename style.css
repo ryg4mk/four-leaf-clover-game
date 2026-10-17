@@ -49,3 +49,6 @@ h1{margin:0;font-size:clamp(11px,3.15vw,14px);line-height:1.22;white-space:norma
   .meter{min-width:58px;padding:7px 5px}
   .meter strong{font-size:15px}
 }
+
+.compat-marker{display:none!important}
+.panel button:disabled{opacity:.62;cursor:default;transform:none;box-shadow:0 3px 0 #789237,0 7px 16px #0004}
