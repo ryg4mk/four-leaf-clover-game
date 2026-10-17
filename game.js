@@ -96,6 +96,7 @@
 
     buildGround();
     if (state.ready && !state.running && !state.found) buildRound();
+    draw();
   }
 
   function buildGround() {
@@ -140,9 +141,9 @@
     const topSafe = 96;
     const bottomSafe = 48;
 
-    // 四つ葉は色味が自然な2枚目だけを使う。
+    // 四つ葉はユーザー指定の2枚目だけを使用。
     const targetImage = state.assets.fourB;
-    const targetW = clamp(state.width * rand(.085,.11), 34, 58);
+    const targetW = clamp(state.width * rand(.09,.105), 38, 54);
     const targetH = targetW * targetImage.naturalHeight / targetImage.naturalWidth;
     const target = {
       img:targetImage,
@@ -150,31 +151,61 @@
       y:rand(topSafe+targetH*.6, state.height-bottomSafe-targetH*.6),
       w:targetW,
       h:targetH,
-      rot:rand(-.55,.55)
+      rot:rand(-.50,.50)
     };
 
-    // 画面全体がクローバーで埋まるくらい密に配置する。
-    // 四つ葉の周囲も空けず、見た目だけで位置がバレないようにする。
-    const count = clamp(Math.floor(state.width*state.height/690), 430, 860);
+    const aspect = state.assets.three.naturalHeight / state.assets.three.naturalWidth;
 
-    let attempts=0;
-    while (state.clovers.length<count && attempts<count*18) {
-      attempts++;
-      const w=rand(23,50);
-      const h=w*state.assets.three.naturalHeight/state.assets.three.naturalWidth;
-      const c={
-        x:rand(w*.42,state.width-w*.42),
-        y:rand(topSafe+h*.42,state.height-bottomSafe-h*.42),
-        w,h,
-        rot:rand(0,TAU),
-        alpha:rand(.84,1),
-        z:rand(0,1)
-      };
-
-      // 四つ葉は最前面に描画するため、周囲の三つ葉を避ける必要はない。
-      state.clovers.push(c);
+    // ランダムだけだと空白ができるため、まず画面全体を格子状＋ジッターで埋める。
+    const spacing = clamp(state.width / 11.5, 28, 36);
+    for (let row = -1, y = -spacing; y < state.height + spacing; row++, y += spacing) {
+      for (let col = -1, x = -spacing; x < state.width + spacing; col++, x += spacing) {
+        const w = rand(spacing * 1.28, spacing * 1.85);
+        state.clovers.push({
+          x: x + rand(-spacing*.36, spacing*.36) + (row % 2 ? spacing*.42 : 0),
+          y: y + rand(-spacing*.36, spacing*.36),
+          w,
+          h:w*aspect,
+          rot:rand(0,TAU),
+          alpha:rand(.86,1),
+          z:rand(0,.7)
+        });
+      }
     }
 
+    // 2層目を追加して隙間をほぼなくす。
+    const spacing2 = spacing * 1.28;
+    for (let y = -spacing2*.5; y < state.height + spacing2; y += spacing2) {
+      for (let x = -spacing2*.5; x < state.width + spacing2; x += spacing2) {
+        const w = rand(spacing * .92, spacing * 1.48);
+        state.clovers.push({
+          x:x + spacing2*.5 + rand(-spacing*.45, spacing*.45),
+          y:y + spacing2*.5 + rand(-spacing*.45, spacing*.45),
+          w,
+          h:w*aspect,
+          rot:rand(0,TAU),
+          alpha:rand(.78,.96),
+          z:rand(.15,.9)
+        });
+      }
+    }
+
+    // 小さめの三つ葉も散らし、背景が見える穴を埋める。
+    const extras = clamp(Math.floor(state.width * state.height / 1300), 180, 420);
+    for (let i=0;i<extras;i++) {
+      const w=rand(spacing*.62, spacing*1.15);
+      state.clovers.push({
+        x:rand(-w*.15,state.width+w*.15),
+        y:rand(-w*.15,state.height+w*.15),
+        w,
+        h:w*aspect,
+        rot:rand(0,TAU),
+        alpha:rand(.76,.96),
+        z:rand(.25,1)
+      });
+    }
+
+    // 四つ葉の周囲も普通に三つ葉を置く。四つ葉自体だけ最後に描画して隠れないようにする。
     state.clovers.sort((a,b)=>a.z-b.z);
     state.target=target;
   }
@@ -274,6 +305,7 @@
   function startGame() {
     if (!state.ready) return;
     buildRound();
+    draw();
     state.running=true;
     state.found=false;
     state.startTime=performance.now();
@@ -320,7 +352,6 @@
       state.elapsed=(performance.now()-state.startTime)/1000;
       timeValue.textContent=state.elapsed.toFixed(2);
     }
-    draw();
     requestAnimationFrame(frame);
   }
 
