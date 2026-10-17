@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#173b1c">
   <meta name="description" content="大量の実写風クローバーの中から、四つ葉のクローバーを1つだけ探す高難度タイムアタックゲーム。">
   <title>四つ葉のクローバーを探すゲーム</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="game.js" defer></script>
+  <link rel="stylesheet" href="style.css?v=20261018-0638">
+  <script src="game.js?v=20261018-0638" defer></script>
 </head>
 <body>
   <main id="app">
@@ -24,13 +24,14 @@
     <section id="fieldWrap" class="field-wrap" aria-label="クローバー畑">
       <canvas id="gameCanvas" width="540" height="820"></canvas>
       <div id="missLayer" class="miss-layer" aria-hidden="true"></div>
+      <div id="foundMarker" class="compat-marker hidden" aria-hidden="true"></div>
     </section>
 
     <section id="startScreen" class="overlay">
       <div class="panel">
         <h2>四つ葉を1つだけ探せ</h2>
         <p>大量の三つ葉に紛れた四つ葉のクローバーをタップしてください。位置は毎回ランダムです。</p>
-        <button id="startButton" type="button">START</button>
+        <button id="startButton" type="button" disabled>読み込み中…</button>
       </div>
     </section>
 
