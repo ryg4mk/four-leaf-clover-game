@@ -91,8 +91,10 @@
 
   function resize() {
     const rect = canvas.getBoundingClientRect();
-    state.width = Math.max(320, Math.round(rect.width));
-    state.height = Math.max(520, Math.round(rect.height));
+    // Canvas内部座標とCSS表示サイズを1:1にする。
+    // 短い横画面を含め、HUD位置・タップ位置・四つ葉の安全範囲がずれないようにする。
+    state.width = Math.max(1, Math.round(rect.width));
+    state.height = Math.max(1, Math.round(rect.height));
     state.dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP);
 
     canvas.width = Math.round(state.width * state.dpr);
