@@ -349,14 +349,6 @@
           ctx.arc(0,0,r,0,TAU);
           ctx.stroke();
         }
-        ctx.font='900 16px system-ui,sans-serif';
-        ctx.textAlign='center';
-        ctx.textBaseline='bottom';
-        ctx.fillStyle='#fff75a';
-        ctx.strokeStyle='rgba(0,0,0,.75)';
-        ctx.lineWidth=5;
-        ctx.strokeText('FOUND!',0,-base*1.2);
-        ctx.fillText('FOUND!',0,-base*1.2);
         ctx.restore();
       }
     }
