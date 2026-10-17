@@ -76,12 +76,11 @@
   }
 
   async function loadAssets() {
-    const [fourA, fourB, three] = await Promise.all([
-      loadB64Image('assets/fourleaf_a.b64'),
+    const [fourB, three] = await Promise.all([
       loadB64Image('assets/fourleaf_b.b64'),
       loadB64Image('assets/threeleaf.b64')
     ]);
-    state.assets = {fourA, fourB, three};
+    state.assets = {fourB, three};
     state.ready = true;
   }
 
@@ -140,38 +139,39 @@
 
     const topSafe = 96;
     const bottomSafe = 48;
-    const targetImage = Math.random() < .5 ? state.assets.fourA : state.assets.fourB;
 
-    const targetW = clamp(state.width * rand(.105,.135), 44, 76);
+    // 四つ葉は色味が自然な2枚目だけを使う。
+    const targetImage = state.assets.fourB;
+    const targetW = clamp(state.width * rand(.085,.11), 34, 58);
     const targetH = targetW * targetImage.naturalHeight / targetImage.naturalWidth;
     const target = {
       img:targetImage,
-      x:rand(targetW*.75, state.width-targetW*.75),
-      y:rand(topSafe+targetH*.75, state.height-bottomSafe-targetH*.75),
+      x:rand(targetW*.6, state.width-targetW*.6),
+      y:rand(topSafe+targetH*.6, state.height-bottomSafe-targetH*.6),
       w:targetW,
       h:targetH,
-      rot:rand(-.65,.65)
+      rot:rand(-.55,.55)
     };
 
-    // 四つ葉の周辺は少し空ける。難しいが、三つ葉で隠れることはない。
-    const exclusion = Math.max(targetW,targetH) * 1.05;
-    const count = clamp(Math.floor(state.width*state.height/1250), 280, 500);
+    // 画面全体がクローバーで埋まるくらい密に配置する。
+    // 四つ葉の周囲も空けず、見た目だけで位置がバレないようにする。
+    const count = clamp(Math.floor(state.width*state.height/690), 430, 860);
 
     let attempts=0;
-    while (state.clovers.length<count && attempts<count*12) {
+    while (state.clovers.length<count && attempts<count*18) {
       attempts++;
-      const w=rand(25,52);
+      const w=rand(23,50);
       const h=w*state.assets.three.naturalHeight/state.assets.three.naturalWidth;
       const c={
-        x:rand(w*.45,state.width-w*.45),
-        y:rand(topSafe+h*.45,state.height-bottomSafe-h*.45),
+        x:rand(w*.42,state.width-w*.42),
+        y:rand(topSafe+h*.42,state.height-bottomSafe-h*.42),
         w,h,
         rot:rand(0,TAU),
         alpha:rand(.84,1),
         z:rand(0,1)
       };
-      const gap=exclusion+w*.28;
-      if (dist2(c.x,c.y,target.x,target.y)<gap*gap) continue;
+
+      // 四つ葉は最前面に描画するため、周囲の三つ葉を避ける必要はない。
       state.clovers.push(c);
     }
 
