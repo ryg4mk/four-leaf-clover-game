@@ -21,6 +21,7 @@
   const BEST_KEY = 'four-leaf-clover-game-best-v2';
   const DPR_CAP = 2;
   const TAU = Math.PI * 2;
+  const DEV_MODE = true; // 開発確認用。公開時は false に戻す。
 
   const state = {
     width: 540,
@@ -37,7 +38,9 @@
     grass: [],
     speckles: [],
     assets: null,
-    ready: false
+    ready: false,
+    highlighting: false,
+    highlightStart: 0
   };
 
   const rand = (a,b) => a + Math.random() * (b-a);
@@ -130,6 +133,37 @@
     }
   }
 
+  function rotatedHalfExtents(w,h,rot) {
+    const c=Math.abs(Math.cos(rot));
+    const s=Math.abs(Math.sin(rot));
+    return {
+      x:(w*c+h*s)/2,
+      y:(w*s+h*c)/2
+    };
+  }
+
+  function placeTargetInsidePlayArea(target, topSafe, bottomSafe) {
+    const e=rotatedHalfExtents(target.w,target.h,target.rot);
+    const margin=10;
+    const minX=e.x+margin;
+    const maxX=state.width-e.x-margin;
+    const minY=topSafe+e.y+margin;
+    const maxY=state.height-bottomSafe-e.y-margin;
+
+    target.x=minX<=maxX ? rand(minX,maxX) : state.width/2;
+    target.y=minY<=maxY ? rand(minY,maxY) : clamp((minY+maxY)/2,e.y+margin,state.height-e.y-margin);
+
+    // 最終ガード。回転後の外接矩形まで必ず画面内。
+    target.x=clamp(target.x,e.x+margin,state.width-e.x-margin);
+    target.y=clamp(target.y,Math.max(e.y+margin,topSafe+e.y+margin),state.height-bottomSafe-e.y-margin);
+
+    if (DEV_MODE) {
+      const ok=target.x-e.x>=0 && target.x+e.x<=state.width &&
+        target.y-e.y>=topSafe && target.y+e.y<=state.height-bottomSafe;
+      if (!ok) console.warn('Target bounds guard failed', {target,e,topSafe,bottomSafe,width:state.width,height:state.height});
+    }
+  }
+
   function buildRound() {
     if (!state.assets) return;
 
@@ -138,6 +172,8 @@
     state.elapsed = 0;
     state.taps = 0;
     state.found = false;
+    state.highlighting = false;
+    state.highlightStart = 0;
     timeValue.textContent = '0.00';
 
     const canvasRect = canvas.getBoundingClientRect();
@@ -151,12 +187,13 @@
     const targetH = targetW * targetImage.naturalHeight / targetImage.naturalWidth;
     const target = {
       img:targetImage,
-      x:rand(targetW*.6, state.width-targetW*.6),
-      y:rand(topSafe+targetH*.6, state.height-bottomSafe-targetH*.6),
+      x:0,
+      y:0,
       w:targetW,
       h:targetH,
       rot:rand(-.50,.50)
     };
+    placeTargetInsidePlayArea(target,topSafe,bottomSafe);
 
     const aspect = state.assets.three.naturalHeight / state.assets.three.naturalWidth;
 
@@ -277,7 +314,49 @@
     // 四つ葉は必ず最後＝最前面。
     if (state.target) {
       const t=state.target;
-      drawSprite(t.img,t.x,t.y,t.w,t.h,t.rot,1);
+
+      if (DEV_MODE && !state.found) {
+        // 開発者モード：四つ葉だけ強制的にマゼンタへ着色して位置確認しやすくする。
+        ctx.save();
+        ctx.translate(t.x,t.y);
+        ctx.rotate(t.rot);
+        ctx.drawImage(t.img,-t.w/2,-t.h/2,t.w,t.h);
+        ctx.globalCompositeOperation='source-atop';
+        ctx.fillStyle='rgba(255,0,210,.78)';
+        ctx.fillRect(-t.w/2,-t.h/2,t.w,t.h);
+        ctx.globalCompositeOperation='source-over';
+        ctx.strokeStyle='rgba(255,255,255,.95)';
+        ctx.lineWidth=2;
+        ctx.strokeRect(-t.w/2,-t.h/2,t.w,t.h);
+        ctx.restore();
+      } else {
+        drawSprite(t.img,t.x,t.y,t.w,t.h,t.rot,1);
+      }
+
+      if (state.highlighting) {
+        const elapsed=(performance.now()-state.highlightStart)/1000;
+        const pulse=(Math.sin(elapsed*10)+1)/2;
+        const base=Math.max(t.w,t.h)*.72;
+        ctx.save();
+        ctx.translate(t.x,t.y);
+        for (let i=0;i<3;i++) {
+          const r=base*(1.10+i*.34+pulse*.12);
+          ctx.strokeStyle='rgba(255,245,80,'+(0.95-i*.22)+')';
+          ctx.lineWidth=Math.max(3,5-i);
+          ctx.beginPath();
+          ctx.arc(0,0,r,0,TAU);
+          ctx.stroke();
+        }
+        ctx.font='900 16px system-ui,sans-serif';
+        ctx.textAlign='center';
+        ctx.textBaseline='bottom';
+        ctx.fillStyle='#fff75a';
+        ctx.strokeStyle='rgba(0,0,0,.75)';
+        ctx.lineWidth=5;
+        ctx.strokeText('FOUND!',0,-base*1.2);
+        ctx.fillText('FOUND!',0,-base*1.2);
+        ctx.restore();
+      }
     }
   }
 
@@ -314,6 +393,7 @@
     state.found=false;
     state.startTime=performance.now();
     foundMarker.classList.add('hidden');
+    state.highlighting=false;
     startScreen.classList.add('hidden');
     resultScreen.classList.add('hidden');
   }
@@ -321,6 +401,8 @@
   function finishGame() {
     state.running=false;
     state.found=true;
+    state.highlighting=true;
+    state.highlightStart=performance.now();
 
     const finalTime=Number(state.elapsed.toFixed(2));
     const isBest=state.best==null || finalTime<state.best;
@@ -332,22 +414,50 @@
     recordText.textContent=isBest?'★ NEW BEST! ★':'';
     bestValue.textContent=fmt(state.best);
 
-    // まず見つけた四つ葉を約1.2秒しっかり強調してから結果へ。
+  if (DEV_MODE) {
+    window.__CLOVER_DEV__={
+      getState:()=>({width:state.width,height:state.height,target:state.target}),
+      sample:(n=1000)=>{
+        if (!state.assets) return {ok:false,reason:'assets-not-ready'};
+        let failures=0;
+        const canvasRect=canvas.getBoundingClientRect();
+        const hudRect=hud.getBoundingClientRect();
+        const topSafe=Math.max(96,hudRect.bottom-canvasRect.top+18);
+        const bottomSafe=28;
+        const img=state.assets.fourB;
+        for(let i=0;i<n;i++){
+          const w=clamp(state.width*rand(.09,.105),38,54);
+          const h=w*img.naturalHeight/img.naturalWidth;
+          const t={w,h,rot:rand(-.50,.50),x:0,y:0};
+          placeTargetInsidePlayArea(t,topSafe,bottomSafe);
+          const e=rotatedHalfExtents(w,h,t.rot);
+          if(t.x-e.x<0||t.x+e.x>state.width||t.y-e.y<topSafe||t.y+e.y>state.height-bottomSafe) failures++;
+        }
+        return {ok:failures===0,failures,n,width:state.width,height:state.height,topSafe,bottomSafe};
+      }
+    };
+  }
+
+    // DOMマーカーもバックアップとして同時表示。
     const rect=canvas.getBoundingClientRect();
+    const fieldRect=fieldWrap.getBoundingClientRect();
     const x=rect.left + state.target.x * rect.width / state.width;
     const y=rect.top + state.target.y * rect.height / state.height;
-    const fieldRect=fieldWrap.getBoundingClientRect();
     foundMarker.style.left=(x-fieldRect.left)+'px';
     foundMarker.style.top=(y-fieldRect.top)+'px';
-    const markerSize=Math.max(82, Math.min(118, state.target.w*2.2));
+    const markerSize=Math.max(90,Math.min(130,state.target.w*2.5));
     foundMarker.style.width=markerSize+'px';
     foundMarker.style.height=markerSize+'px';
     foundMarker.classList.remove('hidden');
 
+    draw();
+
     setTimeout(()=>{
+      state.highlighting=false;
       foundMarker.classList.add('hidden');
+      draw();
       resultScreen.classList.remove('hidden');
-    },1200);
+    },1500);
   }
 
   function onPointer(e) {
@@ -372,6 +482,7 @@
       state.elapsed=(performance.now()-state.startTime)/1000;
       timeValue.textContent=state.elapsed.toFixed(2);
     }
+    if (state.highlighting) draw();
     requestAnimationFrame(frame);
   }
 
