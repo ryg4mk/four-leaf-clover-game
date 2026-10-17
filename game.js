@@ -383,7 +383,7 @@
   }
 
   function startGame() {
-    if (!state.ready) return;
+    if (!state.ready || state.running) return;
     buildRound();
     draw();
     state.running=true;
@@ -471,7 +471,10 @@
 
   canvas.addEventListener('click',onPointer,{passive:true});
   startButton.addEventListener('click',startGame);
-  retryButton.addEventListener('click',startGame);
+  retryButton.addEventListener('click',()=>{
+    state.running=false;
+    startGame();
+  });
   window.addEventListener('resize',resize);
 
   bestValue.textContent=fmt(state.best);
