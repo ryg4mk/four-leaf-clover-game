@@ -1,6 +1,7 @@
 (() => {
   'use strict';
 
+  const viewportMeta = document.getElementById('viewportMeta');
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
   const fieldWrap = document.getElementById('fieldWrap');
@@ -48,6 +49,24 @@
     const dx=ax-bx, dy=ay-by;
     return dx*dx + dy*dy;
   };
+
+  function setGameZoomEnabled(enabled) {
+    if (!viewportMeta) return;
+    viewportMeta.setAttribute(
+      'content',
+      enabled
+        ? 'width=device-width,initial-scale=1,maximum-scale=4,user-scalable=yes,viewport-fit=cover'
+        : 'width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover'
+    );
+
+    // START/RESULTへ戻る時は拡大位置も左上へ戻す。
+    if (!enabled) {
+      requestAnimationFrame(()=>{
+        window.scrollTo(0,0);
+        setTimeout(()=>window.scrollTo(0,0),60);
+      });
+    }
+  }
 
   function loadBest() {
     try {
@@ -389,6 +408,7 @@
     state.found=false;
     state.highlighting=false;
     startScreen.classList.add('hidden');
+    setGameZoomEnabled(true);
     resultScreen.classList.add('hidden');
 
     // 先に開始画面を消してタップへの反応を見せてから、次フレームで新しい配置を作る。
@@ -421,7 +441,8 @@
     resultTaps.textContent=state.taps+'回';
     resultBest.textContent=fmt(state.best)+'秒';
     recordText.textContent=isBest?'★ NEW BEST! ★':'';
-    bestValue.textContent=fmt(state.best);
+    setGameZoomEnabled(false);
+  bestValue.textContent=fmt(state.best);
 
   if (DEV_MODE) {
     window.__CLOVER_DEV__={
@@ -452,6 +473,7 @@
     setTimeout(()=>{
       state.highlighting=false;
       draw();
+      setGameZoomEnabled(false);
       resultScreen.classList.remove('hidden');
     },900);
   }
