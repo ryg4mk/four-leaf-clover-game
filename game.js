@@ -21,7 +21,7 @@
   const BEST_KEY = 'four-leaf-clover-game-best-v2';
   const DPR_CAP = 2;
   const TAU = Math.PI * 2;
-  const DEV_MODE = true; // 開発確認用。公開時は false に戻す。
+  const DEV_MODE = false;
 
   const state = {
     width: 540,
