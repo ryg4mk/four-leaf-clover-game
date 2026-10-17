@@ -13,7 +13,6 @@
   <main id="app">
     <header class="hud">
       <div class="title-block">
-        <p class="kicker">MAX DIFFICULTY</p>
         <h1>四つ葉のクローバーを探すゲーム</h1>
       </div>
       <div class="hud-numbers">
@@ -25,15 +24,13 @@
     <section id="fieldWrap" class="field-wrap" aria-label="クローバー畑">
       <canvas id="gameCanvas" width="540" height="820"></canvas>
       <div id="missLayer" class="miss-layer" aria-hidden="true"></div>
-      <div id="guide" class="guide">四つ葉は1つだけ。</div>
+      <div id="foundMarker" class="found-marker hidden" aria-hidden="true"><span></span><span></span><b>FOUND!</b></div>
     </section>
 
     <section id="startScreen" class="overlay">
       <div class="panel">
-        <p class="panel-kicker">TIME ATTACK</p>
         <h2>四つ葉を1つだけ探せ</h2>
         <p>大量の三つ葉に紛れた四つ葉のクローバーをタップしてください。位置は毎回ランダムです。</p>
-        <p class="warning">難易度MAX。拡大なし。</p>
         <button id="startButton" type="button">START</button>
       </div>
     </section>
