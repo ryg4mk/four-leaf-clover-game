@@ -5,7 +5,6 @@
   const ctx = canvas.getContext('2d');
   const fieldWrap = document.getElementById('fieldWrap');
   const missLayer = document.getElementById('missLayer');
-  const foundMarker = document.getElementById('foundMarker');
   const hud = document.querySelector('.hud');
   const startScreen = document.getElementById('startScreen');
   const resultScreen = document.getElementById('resultScreen');
@@ -344,18 +343,15 @@
 
       if (state.highlighting) {
         const elapsed=(performance.now()-state.highlightStart)/1000;
-        const pulse=(Math.sin(elapsed*10)+1)/2;
-        const base=Math.max(t.w,t.h)*.72;
+        const progress=clamp(elapsed/.9,0,1);
+        const base=Math.max(t.w,t.h)*.82;
         ctx.save();
         ctx.translate(t.x,t.y);
-        for (let i=0;i<3;i++) {
-          const r=base*(1.10+i*.34+pulse*.12);
-          ctx.strokeStyle='rgba(255,245,80,'+(0.95-i*.22)+')';
-          ctx.lineWidth=Math.max(3,5-i);
-          ctx.beginPath();
-          ctx.arc(0,0,r,0,TAU);
-          ctx.stroke();
-        }
+        ctx.strokeStyle='rgba(255,245,120,'+(0.72*(1-progress*.55))+')';
+        ctx.lineWidth=3;
+        ctx.beginPath();
+        ctx.arc(0,0,base*(1+progress*.08),0,TAU);
+        ctx.stroke();
         ctx.restore();
       }
     }
@@ -393,7 +389,6 @@
     state.running=true;
     state.found=false;
     state.startTime=performance.now();
-    foundMarker.classList.add('hidden');
     state.highlighting=false;
     startScreen.classList.add('hidden');
     resultScreen.classList.add('hidden');
@@ -439,26 +434,13 @@
     };
   }
 
-    // DOMマーカーもバックアップとして同時表示。
-    const rect=canvas.getBoundingClientRect();
-    const fieldRect=fieldWrap.getBoundingClientRect();
-    const x=rect.left + state.target.x * rect.width / state.width;
-    const y=rect.top + state.target.y * rect.height / state.height;
-    foundMarker.style.left=(x-fieldRect.left)+'px';
-    foundMarker.style.top=(y-fieldRect.top)+'px';
-    const markerSize=Math.max(90,Math.min(130,state.target.w*2.5));
-    foundMarker.style.width=markerSize+'px';
-    foundMarker.style.height=markerSize+'px';
-    foundMarker.classList.remove('hidden');
-
     draw();
 
     setTimeout(()=>{
       state.highlighting=false;
-      foundMarker.classList.add('hidden');
       draw();
       resultScreen.classList.remove('hidden');
-    },1500);
+    },900);
   }
 
   function onPointer(e) {
@@ -487,7 +469,7 @@
     requestAnimationFrame(frame);
   }
 
-  canvas.addEventListener('pointerdown',onPointer,{passive:true});
+  canvas.addEventListener('click',onPointer,{passive:true});
   startButton.addEventListener('click',startGame);
   retryButton.addEventListener('click',startGame);
   window.addEventListener('resize',resize);
