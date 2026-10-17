@@ -5,6 +5,8 @@
   const ctx = canvas.getContext('2d');
   const fieldWrap = document.getElementById('fieldWrap');
   const missLayer = document.getElementById('missLayer');
+  const foundMarker = document.getElementById('foundMarker');
+  const hud = document.querySelector('.hud');
   const startScreen = document.getElementById('startScreen');
   const resultScreen = document.getElementById('resultScreen');
   const startButton = document.getElementById('startButton');
@@ -138,8 +140,10 @@
     state.found = false;
     timeValue.textContent = '0.00';
 
-    const topSafe = 96;
-    const bottomSafe = 48;
+    const canvasRect = canvas.getBoundingClientRect();
+    const hudRect = hud.getBoundingClientRect();
+    const topSafe = Math.max(96, hudRect.bottom - canvasRect.top + 18);
+    const bottomSafe = 28;
 
     // 四つ葉はユーザー指定の2枚目だけを使用。
     const targetImage = state.assets.fourB;
@@ -309,6 +313,7 @@
     state.running=true;
     state.found=false;
     state.startTime=performance.now();
+    foundMarker.classList.add('hidden');
     startScreen.classList.add('hidden');
     resultScreen.classList.add('hidden');
   }
@@ -327,7 +332,22 @@
     recordText.textContent=isBest?'★ NEW BEST! ★':'';
     bestValue.textContent=fmt(state.best);
 
-    setTimeout(()=>resultScreen.classList.remove('hidden'),320);
+    // まず見つけた四つ葉を約1.2秒しっかり強調してから結果へ。
+    const rect=canvas.getBoundingClientRect();
+    const x=rect.left + state.target.x * rect.width / state.width;
+    const y=rect.top + state.target.y * rect.height / state.height;
+    const fieldRect=fieldWrap.getBoundingClientRect();
+    foundMarker.style.left=(x-fieldRect.left)+'px';
+    foundMarker.style.top=(y-fieldRect.top)+'px';
+    const markerSize=Math.max(82, Math.min(118, state.target.w*2.2));
+    foundMarker.style.width=markerSize+'px';
+    foundMarker.style.height=markerSize+'px';
+    foundMarker.classList.remove('hidden');
+
+    setTimeout(()=>{
+      foundMarker.classList.add('hidden');
+      resultScreen.classList.remove('hidden');
+    },1200);
   }
 
   function onPointer(e) {
