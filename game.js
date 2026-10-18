@@ -22,6 +22,8 @@
   const DPR_CAP = 2;
   const TAU = Math.PI * 2;
   const DEV_MODE = false;
+  // Homepage iframe shows a started round without running the preview timer.
+  const PREVIEW_MODE = new URLSearchParams(window.location.search).get('preview') === '1';
 
   const state = {
     width: 540,
@@ -519,7 +521,11 @@
       resize();
       startButton.disabled=false;
       startButton.textContent='START';
-      requestAnimationFrame(frame);
+      if (PREVIEW_MODE) {
+        startGame();
+      } else {
+        requestAnimationFrame(frame);
+      }
     })
     .catch(()=>{
       startButton.disabled=true;
